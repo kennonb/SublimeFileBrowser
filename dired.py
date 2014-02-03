@@ -470,7 +470,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
                     diffs.append((tmp, a))
                     a = tmp
 
-                print('dired rename: {0} --> {1}'.format(b, a))
+                print(u'dired rename: {0} --> {1}'.format(b, a))
                 os.rename(join(self.path, b), join(self.path, a))
                 existing.remove(b)
                 existing.add(a)
@@ -532,51 +532,14 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
 
 class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
-        items = []
         files = self.get_marked() or self.get_selected()
+        items = (join(self.path, filename) for filename in files)
 
-        if ST3: # sublime.executable_path() is not available in ST2
-            executable_path = sublime.executable_path()
-            if sublime.platform() == 'osx':
-                app_path = executable_path[:executable_path.rfind(".app/")+5]
-                executable_path = app_path+"Contents/SharedSupport/bin/subl"
-            items.append(executable_path)
-            items.append("-n")
-
-            for filename in files:
-                fqn = join(self.path, filename)
-                items.append(fqn)
-
-            subprocess.Popen(items, cwd=self.path)
-
-        else: # ST2
-            items.append("-n")
-            for filename in files:
-                fqn = join(self.path, filename)
-                items.append(fqn)
-
-            if sublime.platform() == 'osx':
-               try:
-                   subprocess.Popen(['subl'] + items, cwd=self.path)
-               except:
-                   try:
-                       subprocess.Popen(['sublime'] + items, cwd=self.path)
-                   except:
-                       subprocess.Popen(['/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl'] + items, cwd=self.path)
-            elif sublime.platform() == 'windows':
-               try:
-                   subprocess.Popen(['subl'] + items, cwd=self.path, shell=True)
-               except:
-                   try:
-                       subprocess.Popen(['sublime'] + items, cwd=self.path, shell=True)
-                   except:
-                       subprocess.Popen(['sublime_text.exe'] + items, cwd=self.path, shell=True)
-            else:
-               try:
-                   subprocess.Popen(['subl'] + items, cwd=self.path)
-               except:
-                   subprocess.Popen(['sublime'] + items, cwd=self.path)
-
+        windows = [w.id() for w in sublime.windows()]
+        sublime.run_command("new_window")
+        new_window = [w for w in sublime.windows() if w.id() not in windows]
+        for i in items:
+            new_window[0].open_file(i)
 
 
 class DiredHelpCommand(TextCommand):
